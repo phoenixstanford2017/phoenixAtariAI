@@ -2,8 +2,8 @@ import gym
 env = gym.make('Phoenix-ram-v0')
 
 tot_rewards = []
-quiet = True
-for i_episode in range(100):
+quiet = False
+for i_episode in range(2):
     observation = env.reset()
     tot_reward = 0
     print '##################'
@@ -11,10 +11,12 @@ for i_episode in range(100):
         if not quiet:
             env.render()
         action = env.action_space.sample()
-        # print 'action: %s' % action
+        #print 'action: %s' % action
         observation, reward, done, info = env.step(action)
         if reward:
-            # print reward
+            #print observation
+            print info
+            print reward
             tot_reward += reward
         if done:
             print("Episode finished after {} timesteps".format(t+1))

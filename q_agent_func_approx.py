@@ -1,5 +1,5 @@
 from collections import defaultdict
-import numpy
+import numpy, random
 from gym.spaces import discrete
 
 class UnsupportedSpace(Exception):
@@ -30,7 +30,40 @@ class QAgentFuncApprox(object):
 
         # TODO define Q_opt as self.weights dotproduct phi(s,a) (similar to get_Qopt in blackjack 4a assignment)
         self.q = defaultdict(lambda: self.config["init_std"] * numpy.random.randn(self.action_n) + self.config["init_mean"])
+    def getQ(self, state, action):
+        score = 0
+        for f, v in self.feature_extractor(state, action):
+            score += self.weights[f] * v
+        return score
 
+
+
+    # Call this function to get the step size to update the weights.
+    def getStepSize(self):
+        return 1.0 / math.sqrt(self.numIters)
+
+    # We will call this function with (s, a, r, s'), which you should use to update |weights|.
+    # Note that if s is a terminal state, then s' will be None.  Remember to check for this.
+    # You should update the weights using self.getStepSize(); use
+    # self.getQ() to compute the current estimate of the parameters.
+    def incorporateFeedback(self, state, action, reward, newState):
+        # BEGIN_YOUR_CODE (our solution is 12 lines of code, but don't worry if you deviate from this)
+        DeltaWeights=defaultdict(float)
+        #for f,v in self.featureExtractor(state,action):
+        #    self.weights[f]= 0 
+        Prediction=self.getQ(state,action)
+        eta=self.getStepSize()
+        if newState!=None:
+            V=[self.getQ(newState,newAction) for newAction in self.actions(newState)]
+            Vopt=max(V)
+            Target=reward+self.config["discount"]*Vopt
+        else:
+            Target=reward
+        DeltaScalar=self.config["eta"]*(Prediction-Target)
+        for key,v in self.feature_extractor(state,action):
+            DeltaWeights[key]= DeltaScalar * v 
+        for key in self.weights.keys():
+            self.weights[key]=self.weights.get(key,0)-DeltaWeights.get(key,0)
     # Define the feature extractor
     # TODO include action in feature vector
     def feature_extractor(self, state):
@@ -44,7 +77,10 @@ class QAgentFuncApprox(object):
             eps = self.config["eps"]
         # epsilon greedy.
         # TODO update the argmax argument based on the new Q_opt function approx definition
-        action = numpy.argmax(self.q[observation.item()]) if numpy.random.random() > eps else self.action_space.sample()
+        if numpy.random.random() <= eps:
+            action=self.action_space.sample()
+        else:
+            action = max((self.getQ(observation, action), action) for action in self.action_space)[1] 
         return action
 
     def learn(self, env):
@@ -56,9 +92,5 @@ class QAgentFuncApprox(object):
             obs2, reward, done, _ = env.step(action)
             future = 0.0
             # TODO Update the incorporate feedback based on Q-learning with function approx algorithm
-            if not done:
-                future = numpy.max(q[obs2.item()])
-            q[obs.item()][action] -= \
-                self.config["eta"] * (q[obs.item()][action] - reward - config["discount"] * future)
-
+            self.incorporateFeedback(obs, action, reward, obs2)
             obs = obs2
