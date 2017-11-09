@@ -26,10 +26,18 @@ class QAgentFuncApprox(object):
             "discount": 0.95,
             "n_iter": 10000}        # Number of iterations
         self.config.update(userconfig)
-        # TODO define the feature extractor
+        self.weights = defaultdict(float)
 
-        # TODO define Q_opt as w dotproduct phi(s,a) (similar to get_Qopt in blackjack 4a assignment)
+        # TODO define Q_opt as self.weights dotproduct phi(s,a) (similar to get_Qopt in blackjack 4a assignment)
         self.q = defaultdict(lambda: self.config["init_std"] * numpy.random.randn(self.action_n) + self.config["init_mean"])
+
+    # Define the feature extractor
+    # TODO include action in feature vector
+    def feature_extractor(self, state):
+        phi = defaultdict(float)
+        for i, d in enumerate(state):
+            phi[(i, d)] = 1
+        return phi
 
     def act(self, observation, eps=None):
         if eps is None:
