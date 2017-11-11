@@ -40,7 +40,7 @@ class QAgentFuncApprox(object):
 
     # Call this function to get the step size to update the weights.
     def getStepSize(self):
-        return 1.0 / math.sqrt(self.numIters)
+        return 1.0 / numpy.sqrt(self.numIters)
 
     # We will call this function with (s, a, r, s'), which you should use to update |weights|.
     # Note that if s is a terminal state, then s' will be None.  Remember to check for this.
