@@ -18,25 +18,18 @@ class QAgentFuncApprox(object):
         self.observation_space = observation_space
         self.action_space = action_space
         self.action_n = action_space.n
-        self.config = {
-            "init_mean" : 0.0,      # Initialize Q values with this mean
-            "init_std" : 0.0,       # Initialize Q values with this standard deviation
-            "eta" : 0.1,
-            "eps": 0.05,            # Epsilon in epsilon greedy policies
-            "discount": 0.95,
-            "n_iter": 10000}        # Number of iterations
-        self.config.update(userconfig)
+        self.eta = 0.1
+        self.eps = 0.05
+        self.discount = 0.95
+        self.maxIters = 10000
+        self.numIters = 0
         self.weights = defaultdict(float)
 
-        # TODO define Q_opt as self.weights dotproduct phi(s,a) (similar to get_Qopt in blackjack 4a assignment)
-        self.q = defaultdict(lambda: self.config["init_std"] * numpy.random.randn(self.action_n) + self.config["init_mean"])
     def getQ(self, state, action):
         score = 0
         for f, v in self.feature_extractor(state, action):
             score += self.weights[f] * v
         return score
-
-
 
     # Call this function to get the step size to update the weights.
     def getStepSize(self):
@@ -55,10 +48,10 @@ class QAgentFuncApprox(object):
         if newState!=None:
             V=[self.getQ(newState,newAction) for newAction in self.action_space]
             Vopt=max(V)
-            Target=reward+self.config["discount"]*Vopt
+            Target=reward+self.discount*Vopt
         else:
             Target=reward
-        DeltaScalar=self.config["eta"]*(Prediction-Target)
+        DeltaScalar=self.eta*(Prediction-Target)
         for key,v in self.feature_extractor(state,action).items():
             DeltaWeights[key]= DeltaScalar * v 
         for key in self.weights.keys():
@@ -69,11 +62,12 @@ class QAgentFuncApprox(object):
         phi[(state,action)] = 1
         for i, v in enumerate(state):
             phi[(i, v, action)] = 1
+        print('phi for iteration: %s new phi is: %s' % (self.numIters, phi))
         return phi
 
     def act(self, observation, eps=None):
         if eps is None:
-            eps = self.config["eps"]
+            eps = self.eps
         # epsilon greedy.
         if numpy.random.random() <= eps:
             action=self.action_space.sample()
@@ -82,12 +76,13 @@ class QAgentFuncApprox(object):
         return action
 
     def learn(self, env):
-        config = self.config
         obs = env.reset()
-        q = self.q
-        for t in range(config["n_iter"]):
-            action, _ = self.act(obs)
+        for t in range(self.maxIters):
+            self.numIters += 1
+            action = self.act(obs)
+            print('Iter "%s", action: "%s"' % (self.numIters, action))
             obs2, reward, done, _ = env.step(action)
+            print ('Iter "%s", IsEnd: "%s", reward: "%s", newState: "%s"' % (self.numIters, done, reward, obs2))
             if done:
                 break
             self.incorporateFeedback(obs, action, reward, obs2)
