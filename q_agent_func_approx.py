@@ -64,17 +64,17 @@ class QAgentFuncApprox(object):
         for key in self.weights.keys():
             self.weights[key]=self.weights.get(key,0)-DeltaWeights.get(key,0)
     # Define the feature extractor
-    # TODO include action in feature vector
     def feature_extractor(self, state, action):
         phi = defaultdict(float)
         phi[(state,action)] = 1
+        for i, v in enumerate(state):
+            phi[(i, v, action)] = 1
         return phi
 
     def act(self, observation, eps=None):
         if eps is None:
             eps = self.config["eps"]
         # epsilon greedy.
-        # TODO update the argmax argument based on the new Q_opt function approx definition
         if numpy.random.random() <= eps:
             action=self.action_space.sample()
         else:
