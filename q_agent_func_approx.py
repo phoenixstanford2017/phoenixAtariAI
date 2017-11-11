@@ -18,7 +18,7 @@ class QAgentFuncApprox(object):
         self.observation_space = observation_space
         self.action_space = action_space
         self.action_n = action_space.n
-        self.eta = 0.1,
+        self.eta = 0.1
         self.eps = 0.05
         self.discount = 0.95
         self.maxIters = 10000
