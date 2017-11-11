@@ -78,6 +78,7 @@ class QAgentFuncApprox(object):
     def learn(self, env):
         obs = env.reset()
         for t in range(self.maxIters):
+            self.numIters += 1
             action, _ = self.act(obs)
             obs2, reward, done, _ = env.step(action)
             if done:
