@@ -13,6 +13,7 @@ setup(
         'atari_py>=0.1.1',
         'Pillow',
         'PyOpenGL',
+        'Keras>=2.0.9',
     ],
 )
 
