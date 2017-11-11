@@ -80,7 +80,7 @@ class QAgentFuncApprox(object):
         for t in range(self.maxIters):
             self.numIters += 1
             action = self.act(obs)
-            print('Iter "%s", action: %s' % (self.numIters, action))
+            print('Iter "%s", action: "%s"' % (self.numIters, action))
             obs2, reward, done, _ = env.step(action)
             print ('Iter "%s", IsEnd: "%s", reward: "%s", newState: "%s"' % (self.numIters, done, reward, obs2))
             if done:
