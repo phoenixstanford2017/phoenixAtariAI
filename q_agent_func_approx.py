@@ -62,7 +62,7 @@ class QAgentFuncApprox(object):
         phi[(state,action)] = 1
         for i, v in enumerate(state):
             phi[(i, v, action)] = 1
-        print('phi for iteration: %s new phi is: %s' % (self.numIters, phi)
+        print('phi for iteration: %s new phi is: %s' % (self.numIters, phi))
         return phi
 
     def act(self, observation, eps=None):
@@ -79,8 +79,10 @@ class QAgentFuncApprox(object):
         obs = env.reset()
         for t in range(self.maxIters):
             self.numIters += 1
-            action, _ = self.act(obs)
+            action = self.act(obs)
+            print('Iter "%s", action: %s' % (self.numIters, action))
             obs2, reward, done, _ = env.step(action)
+            print ('Iter "%s", IsEnd: "", reward: "%s", newState: "%s"' % (done, reward, obs2))
             if done:
                 break
             self.incorporateFeedback(obs, action, reward, obs2)
