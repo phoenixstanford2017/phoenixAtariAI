@@ -1,5 +1,5 @@
 from collections import defaultdict
-import numpy, random
+import numpy
 from gym.spaces import discrete
 
 class UnsupportedSpace(Exception):
@@ -47,29 +47,27 @@ class QAgentFuncApprox(object):
     # You should update the weights using self.getStepSize(); use
     # self.getQ() to compute the current estimate of the parameters.
     def incorporateFeedback(self, state, action, reward, newState):
-        # BEGIN_YOUR_CODE (our solution is 12 lines of code, but don't worry if you deviate from this)
         DeltaWeights=defaultdict(float)
         #for f,v in self.featureExtractor(state,action):
         #    self.weights[f]= 0 
         Prediction=self.getQ(state,action)
         eta=self.getStepSize()
         if newState!=None:
-            V=[self.getQ(newState,newAction) for newAction in self.actions(newState)]
+            V=[self.getQ(newState,newAction) for newAction in self.action_space]
             Vopt=max(V)
             Target=reward+self.config["discount"]*Vopt
         else:
             Target=reward
         DeltaScalar=self.config["eta"]*(Prediction-Target)
-        for key,v in self.feature_extractor(state,action):
+        for key,v in self.feature_extractor(state,action).items():
             DeltaWeights[key]= DeltaScalar * v 
         for key in self.weights.keys():
             self.weights[key]=self.weights.get(key,0)-DeltaWeights.get(key,0)
     # Define the feature extractor
     # TODO include action in feature vector
-    def feature_extractor(self, state):
+    def feature_extractor(self, state, action):
         phi = defaultdict(float)
-        for i, d in enumerate(state):
-            phi[(i, d)] = 1
+        phi[(state,action)] = 1
         return phi
 
     def act(self, observation, eps=None):
@@ -90,7 +88,7 @@ class QAgentFuncApprox(object):
         for t in range(config["n_iter"]):
             action, _ = self.act(obs)
             obs2, reward, done, _ = env.step(action)
-            future = 0.0
-            # TODO Update the incorporate feedback based on Q-learning with function approx algorithm
+            if done:
+                break
             self.incorporateFeedback(obs, action, reward, obs2)
             obs = obs2
