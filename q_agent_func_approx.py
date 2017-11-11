@@ -82,7 +82,7 @@ class QAgentFuncApprox(object):
             action = self.act(obs)
             print('Iter "%s", action: %s' % (self.numIters, action))
             obs2, reward, done, _ = env.step(action)
-            print ('Iter "%s", IsEnd: "", reward: "%s", newState: "%s"' % (done, reward, obs2))
+            print ('Iter "%s", IsEnd: "%s", reward: "%s", newState: "%s"' % (self.numIters, done, reward, obs2))
             if done:
                 break
             self.incorporateFeedback(obs, action, reward, obs2)
