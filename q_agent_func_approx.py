@@ -21,11 +21,12 @@ class QAgentFuncApprox(object):
         self.action_space = action_space
         self.action_n = len(action_space)
         self.eta = 0.1
-        self.eps = 0.05
+        self.eps = 0.30
         self.discount = 0.95
         self.maxIters = 10000
         self.numIters = 0
         self.weights = defaultdict(float)
+        self.gameNumber=0
 
     def getQ(self, state, action):
         score = 0
@@ -43,13 +44,13 @@ class QAgentFuncApprox(object):
     # self.getQ() to compute the current estimate of the parameters.
     def noNewState(self, state):
         return len(state)==0
-    def incorporateFeedback(self, state, action, reward, newState):
+    def incorporateFeedback(self, state, action, reward, newState=()):
         DeltaWeights=defaultdict(float)
         #for f,v in self.featureExtractor(state,action):
         #    self.weights[f]= 0 
         Prediction=self.getQ(state,action)
         eta=self.getStepSize()
-        if self.noNewState(state):
+        if len(newState)>0:
             V=[self.getQ(newState,newAction) for newAction in self.action_space]
             Vopt=max(V)
             Target=reward+self.discount*Vopt
@@ -88,10 +89,13 @@ class QAgentFuncApprox(object):
         for t in range(self.maxIters):
             self.numIters += 1
             action = self.act(obs)
-            print('Iter "%s", action: "%s"' % (self.numIters, action))
+            if self.numIters % 300 ==0:
+                print('GameNumber:"%s" Iter "%s", action: "%s"' % (self.gameNumber,self.numIters, action))
             obs2, reward, done, _ = env.step(action)
-            print ('Iter "%s", IsEnd: "%s", reward: "%s", newState: "%s"' % (self.numIters, done, reward, obs2))
+            #print ('Iter "%s", IsEnd: "%s", reward: "%s", newState: "%s"' % (self.numIters, done, reward, obs2))
             if done:
+                self.gameNumber += 1
+                self.incorporateFeedback(obs, action, reward)
                 break
             self.incorporateFeedback(obs, action, reward, obs2)
             obs = obs2

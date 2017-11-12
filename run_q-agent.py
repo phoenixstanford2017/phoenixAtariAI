@@ -7,8 +7,10 @@ print env.observation_space
 print env.action_space
     
 import   q_agent_func_approx 
-learner= q_agent_func_approx.QAgentFuncApprox(env.observation_space,[0,1,2,3,4,5,6,7])
-learner.learn(env)
+learner= q_agent_func_approx.QAgentFuncApprox(env.observation_space,[0,1,2,3,4])
+for ind in range(10):
+    learner.learn(env)
+    print "new game:%d" %ind
 qOpt = defaultdict()
 
 '''
