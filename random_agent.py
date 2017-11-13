@@ -1,4 +1,9 @@
 import gym
+import logging
+logging.basicConfig(level=logging.INFO)
+
+LOGGER = logging.getLogger(__name__)
+
 env = gym.make('Phoenix-ram-v0')
 
 tot_rewards = []
@@ -12,7 +17,7 @@ for i_episode in range(2):
             env.render()
         action = env.action_space.sample()
         #print 'action: %s' % action
-        observation, reward, done, info = env.step(action)
+        observation2, reward, done, info = env.step(action)
         if reward:
             #print observation
             print info

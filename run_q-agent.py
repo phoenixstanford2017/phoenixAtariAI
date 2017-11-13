@@ -1,6 +1,4 @@
 from collections import defaultdict
-import gym
-from gym.spaces import discrete
 import gym.spaces
 env = gym.make('Phoenix-ram-v0')
 print env.observation_space
@@ -15,7 +13,7 @@ qOpt = defaultdict()
 
 '''
 for observation in env.observation_space:
-    action=learner.act(observation,eps=0)
+    action=learner.get_action(observation,eps=0)
     qOpt[observation]=action
 '''
 
@@ -30,7 +28,7 @@ for i_episode in range(2):
         if not quiet:
             env.render()
         #action = qOpt[observation]
-        action=learner.act(observation,eps=0)
+        action=learner.get_action(observation, eps=0)
         #print 'action: %s' % action
         observation, reward, done, info = env.step(action)
         if reward:
