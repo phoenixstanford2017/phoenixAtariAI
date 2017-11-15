@@ -15,9 +15,11 @@ env = gym.make('Phoenix-ram-v0')
 
 
 def training(weightFile, nEpisodes=100):
-    agent = QAgentFuncApprox(environment=env, action_space=[0, 1, 2, 3, 4], epsilon=0.4)
+    agent = QAgentFuncApprox(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0.4, eta=0.02, maxIters=50000)
     for i_episode in range(nEpisodes):
         agent.learn()
+        if agent.numIters > agent.maxIters:
+            break
 
     # Save the weight vector
     agent.writingWeights(weightFile)
@@ -58,7 +60,7 @@ def play(environment, agent, quiet=False):
 
 if __name__ == '__main__':
    
-    weightFileCommanline=None
+    weightFileCommanline = None
     learning=False
     nEpisodes=100
     try:
@@ -76,8 +78,8 @@ if __name__ == '__main__':
             learning=True
         elif opt in ("-n"):
             nEpisodes=int(arg)
-    if weightFileCommanline!=None:
-        weightFile=weightFileCommanline
+    if weightFileCommanline != None:
+        weightFile = weightFileCommanline
     else:
         #default
         weightFile="weights_files/weights.txt"

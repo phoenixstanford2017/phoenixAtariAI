@@ -16,10 +16,10 @@ class QAgentFuncApprox(object):
             self,
             environment,
             action_space,
-            eta = 0.02,
-            epsilon = 0.99,
-            discount = 0.9,
-            maxIters = 10000
+            eta=0.02,
+            epsilon=0.99,
+            discount=0.9,
+            maxIters=10000
     ):
         """Q-learning agent with function approx builder
         :param environment:         the game environment object
@@ -38,15 +38,16 @@ class QAgentFuncApprox(object):
         self.discount = discount
         self.maxIters = maxIters
         self.eps_decaying_factor = 0.99999
+        self.eta_decaying_factor = 0.99999
         self.numIters = 0
         self.weights = defaultdict(float)
         self.gameNumber=1
 
-    def readingWeights(self,filePath):
+    def readingWeights(self, filePath):
         with open(filePath, 'rb') as handle:
             self.weights = pickle.loads(handle.read())
 
-    def writingWeights(self,filePath):
+    def writingWeights(self, filePath):
         with open(filePath, 'wb') as handle:
             pickle.dump(self.weights, handle)
 
@@ -131,10 +132,14 @@ class QAgentFuncApprox(object):
         Q_opt = lambda s, a: self.getQ(s, a)
         V_opt = lambda s: 0 if s is done else max(self.getQ(s, a) for a in self.action_space)
 
-        # eta = self.get_eta()
-        eta = self.eta
+        # self.eta = self.get_eta()
+        self.eta *= self.eta_decaying_factor
+        reward = -20 if done else reward
+        reward *= 10
+        if not reward:
+            reward = -3
 
-        scalar = -eta*(Q_opt(state, action) - (reward+self.discount*V_opt(newState)))
+        scalar = -self.eta*(Q_opt(state, action) - (reward+self.discount*V_opt(newState)))
 
         # Increment sparse vector
         for feature, f_value in self.feature_extractor(state, action).items():
