@@ -1,10 +1,22 @@
-import gym
-import logging
-logging.basicConfig(level=logging.INFO)
-
-LOGGER = logging.getLogger(__name__)
-
+from collections import defaultdict
+import gym.spaces
 env = gym.make('Phoenix-ram-v0')
+print env.observation_space
+print env.action_space
+    
+import   q_agent_func_approx 
+learner= q_agent_func_approx.QAgentFuncApprox(env.observation_space,[0,1,2,3,4])
+for ind in range(10):
+    learner.learn(env)
+    print "new game:%d" %ind
+qOpt = defaultdict()
+
+'''
+for observation in env.observation_space:
+    action=learner.get_action(observation,eps=0)
+    qOpt[observation]=action
+'''
+
 
 tot_rewards = []
 quiet = False
@@ -15,9 +27,10 @@ for i_episode in range(2):
     for t in range(10000):
         if not quiet:
             env.render()
-        action = env.action_space.sample()
+        #action = qOpt[observation]
+        action=learner.get_action(observation, eps=0)
         #print 'action: %s' % action
-        observation2, reward, done, info = env.step(action)
+        observation, reward, done, info = env.step(action)
         if reward:
             #print observation
             print info
