@@ -3,6 +3,7 @@ import gym
 import logging
 import datetime
 from q_agent_func_approx import QAgentFuncApprox
+import sys, getopt
 
 # Set up logging
 formatter = '%(asctime)s %(levelname)s %(name)s %(message)s'
@@ -13,12 +14,13 @@ LOGGER = logging.getLogger(__name__)
 env = gym.make('Phoenix-ram-v0')
 
 
-def training():
+def training(weightFile, nEpisodes=100):
     agent = QAgentFuncApprox(environment=env, action_space=[0, 1, 2, 3, 4], epsilon=0.4)
-    for i_episode in range(100):
+    for i_episode in range(nEpisodes):
         agent.learn()
 
     # Save the weight vector
+    agent.writingWeights(weightFile)
     # timestamp = datetime.datetime.now().isoformat()
     # with open('weights_files/weights_%s.p' % timestamp, 'wb') as fp:
     #     pickle.dump(agent.weights, fp)
@@ -55,7 +57,40 @@ def play(environment, agent, quiet=False):
     sum(tot_rewards) / float(len(tot_rewards)))
 
 if __name__ == '__main__':
-    trained_agent = training()
+   
+    weightFileCommanline=None
+    learning=False
+    nEpisodes=100
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],"hlw:n:",["wfile="])
+    except getopt.GetoptError:
+        print 'run_agent.py -w <weightFile> -l'
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print 'run_agent.py -w <weightFile> -l'
+            sys.exit()
+        elif opt in ("-w","-wfile"):
+            weightFileCommanline = arg
+        elif opt in ("-l"):
+            learning=True
+        elif opt in ("-n"):
+            nEpisodes=int(arg)
+    if weightFileCommanline!=None:
+        weightFile=weightFileCommanline
+    else:
+        #default
+        weightFile="weights_files/weights.txt"
+
+    print 'weight file is ', weightFile
+    if  learning:
+        print "learning..." 
+        trained_agent = training(weightFile,nEpisodes)
+    else:
+        trained_agent=QAgentFuncApprox(environment=env, action_space=[0, 1, 2, 3, 4], epsilon=0.4)
+        trained_agent.readingWeights(weightFile)
+
+
     play(environment=env, agent=trained_agent)
 
 

@@ -1,7 +1,8 @@
 from collections import defaultdict
 import logging
 import numpy
-
+from os.path import expanduser
+import pickle
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +41,14 @@ class QAgentFuncApprox(object):
         self.numIters = 0
         self.weights = defaultdict(float)
         self.gameNumber=1
+
+    def readingWeights(self,filePath):
+        with open(filePath, 'rb') as handle:
+            self.weights = pickle.loads(handle.read())
+
+    def writingWeights(self,filePath):
+        with open(filePath, 'wb') as handle:
+            pickle.dump(self.weights, handle)
 
     def feature_extractor(self, state, action):
         """ Method returning the feature vector phi(s,a)
