@@ -32,7 +32,7 @@ class QAgentFuncApprox(object):
         """
         self.env = environment
         self.action_space = action_space
-        self.action_n = len(action_space)
+        self.action_space_n = len(action_space)
         self.eta = eta
         self.eps = epsilon
         self.discount = discount
@@ -69,17 +69,6 @@ class QAgentFuncApprox(object):
             phi[(i, v, action)] = 1
         # LOGGER.debug('phi for iteration: %s new phi is: %s', self.numIters, phi)
         return phi
-
-        # phi=[]
-        # featureValue = 1
-        # fk1 = (tuple(state), action)
-        #
-        # phi.append((fk1,featureValue))
-        # for i, v in enumerate(state):
-        #     fk2=(i,v,action)
-        #     phi.append((fk2,featureValue))
-        # #print('phi for iteration: %s new phi is: %s' % (self.numIters, phi))
-        # return phi
 
     def getQ(self, state, action):
         """ Method returning the dot product of the feature vector phi(s,a)
