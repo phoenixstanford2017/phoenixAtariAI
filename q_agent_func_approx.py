@@ -1,7 +1,8 @@
 from collections import defaultdict
 import logging
 import numpy
-
+from os.path import expanduser
+import pickle
 
 LOGGER = logging.getLogger(__name__)
 
@@ -15,10 +16,10 @@ class QAgentFuncApprox(object):
             self,
             environment,
             action_space,
-            eta = 0.02,
-            epsilon = 0.99,
-            discount = 0.9,
-            maxIters = 10000
+            eta=0.02,
+            epsilon=0.9,
+            discount=0.9,
+            maxIters=10000
     ):
         """Q-learning agent with function approx builder
         :param environment:         the game environment object
@@ -31,15 +32,27 @@ class QAgentFuncApprox(object):
         """
         self.env = environment
         self.action_space = action_space
-        self.action_n = len(action_space)
+        self.action_space_n = len(action_space)
         self.eta = eta
         self.eps = epsilon
         self.discount = discount
         self.maxIters = maxIters
-        self.eps_decaying_factor = 0.99999
+        self.eps_decaying_factor = 0.99998
+        self.eta_decaying_factor = 0.999999
+        self.min_eps = 0.01
         self.numIters = 0
         self.weights = defaultdict(float)
         self.gameNumber=1
+        self.inactivity_counter = 0
+        self.tot_score = 0
+
+    def readingWeights(self, filePath):
+        with open(filePath, 'rb') as handle:
+            self.weights = pickle.loads(handle.read())
+
+    def writingWeights(self, filePath):
+        with open(filePath, 'wb') as handle:
+            pickle.dump(self.weights, handle)
 
     def feature_extractor(self, state, action):
         """ Method returning the feature vector phi(s,a)
@@ -56,17 +69,6 @@ class QAgentFuncApprox(object):
             phi[(i, v, action)] = 1
         # LOGGER.debug('phi for iteration: %s new phi is: %s', self.numIters, phi)
         return phi
-
-        # phi=[]
-        # featureValue = 1
-        # fk1 = (tuple(state), action)
-        #
-        # phi.append((fk1,featureValue))
-        # for i, v in enumerate(state):
-        #     fk2=(i,v,action)
-        #     phi.append((fk2,featureValue))
-        # #print('phi for iteration: %s new phi is: %s' % (self.numIters, phi))
-        # return phi
 
     def getQ(self, state, action):
         """ Method returning the dot product of the feature vector phi(s,a)
@@ -97,15 +99,15 @@ class QAgentFuncApprox(object):
         :param state:       current state of the game
         :return:            action from the action space
         """
-        if self.eps:
+        if self.eps and self.eps > self.min_eps:
             self.eps *= self.eps_decaying_factor
         # epsilon greedy.
         if numpy.random.random() <= self.eps:
             action = numpy.random.choice(self.action_space)
         else:
             action = max((self.getQ(state, action), action) for action in self.action_space)[1]
-            LOGGER.debug('Q_opt action: %s', action)
-            LOGGER.debug(list((self.getQ(state, action), action) for action in self.action_space))
+            # LOGGER.debug('Q_opt action: %s', action)
+            # LOGGER.debug(list((self.getQ(state, action), action) for action in self.action_space))
         return action
 
     def incorporateFeedback(self, state, action, reward, newState, done=False):
@@ -122,34 +124,76 @@ class QAgentFuncApprox(object):
         Q_opt = lambda s, a: self.getQ(s, a)
         V_opt = lambda s: 0 if s is done else max(self.getQ(s, a) for a in self.action_space)
 
-        # eta = self.get_eta()
-        eta = self.eta
-
-        scalar = -eta*(Q_opt(state, action) - (reward+self.discount*V_opt(newState)))
+        scalar = -self.eta*(Q_opt(state, action) - (reward+self.discount*V_opt(newState)))
 
         # Increment sparse vector
         for feature, f_value in self.feature_extractor(state, action).items():
             self.weights[feature] += scalar * f_value
 
+    def get_reward(self, reward, done, inactivity=False):
+        if inactivity:
+            if done:
+                # Agent lost or lost life
+                return -10
+                # return -3000.0/self.tot_score
+
+            if reward:
+                self.tot_score += reward
+                reward *= 10
+                self.inactivity_counter = 0
+            elif not reward:
+                # Agent did not hit anything
+                if self.inactivity_counter % 10 == 0:
+                    reward = -self.inactivity_counter
+                # Increase the counter
+                self.inactivity_counter += 1
+        else:
+            if done:
+                reward = -10
+            elif not reward:
+                self.inactivity_counter += 1
+                reward = -1
+            else:
+                self.tot_score += reward
+        return reward
+
     def learn(self):
         state = self.env.reset()
-        for t in range(self.maxIters):
+        self.initial_state = state
+        for t in range(10000):
             self.numIters += 1
             action = self.get_action(state)
             new_state, reward, done, debug_info = self.env.step(action)
-            if self.numIters % 500 == 0:
+            if self.numIters % 10000 == 0:
                 LOGGER.info(
                     'GameNumber:"%s" Iter "%s"',
                     self.gameNumber,
                     self.numIters,
                 )
-                LOGGER.info('epsilon: "%s", eta: "%s"', self.eps, self.eta)
-                # LOGGER.debug('weights vector: %s', self.weights)
-                LOGGER.info('debugging info: %s', debug_info)
+                LOGGER.debug('epsilon: "%s", eta: "%s"', self.eps, self.eta)
+                LOGGER.debug('weights vector lenght: %s', len(self.weights))
+                LOGGER.debug('debugging info: %s', debug_info)
+
+            # self.eta *= self.eta_decaying_factor
+
+            # Get reward
+            reward = self.get_reward(reward, done, inactivity=True)
+
+
+            # Stop if agent is stuck
+            if self.inactivity_counter > 500:
+                # The agent is stuck
+                LOGGER.warning('The agent got stuck!')
+                done = True
+
 
             self.incorporateFeedback(state, action, reward, new_state, done)
             if done:
+                LOGGER.debug('################# Game: %s finished score: %s', self.gameNumber, self.tot_score)
+                # Reset counters
                 self.gameNumber += 1
+                self.inactivity_counter = 0
+                self.tot_score = 0
                 break
 
             # Initialize new state

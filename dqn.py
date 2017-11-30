@@ -62,7 +62,7 @@ class DQNAgent:
 
 
 if __name__ == "__main__":
-    env = gym.make('CartPole-v1')
+    env = gym.make('Phoenix-ram-v0')
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
     agent = DQNAgent(state_size, action_size)
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        for time in range(500):
+        for time in range(10000):
             # env.render()
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
