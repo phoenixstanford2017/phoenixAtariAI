@@ -14,7 +14,8 @@ setup(
         'Pillow',
         'PyOpenGL',
         'Keras>=2.0.9',
-        'tensorflow>=1.4.0'
+        'tensorflow>=1.4.0',
+        'h5py>=2.7.1'
     ],
 )
 
