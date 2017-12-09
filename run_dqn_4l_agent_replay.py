@@ -3,7 +3,7 @@ import gym
 import logging
 import datetime
 import numpy
-from dqn_agent_4_layers import DQNAgent
+from dqn_agent_4_layers_replay import DQNAgent
 import sys, getopt
 
 # Set up logging
@@ -25,10 +25,11 @@ env = gym.make('Phoenix-ram-v0')
 
 LOGGER.setLevel(logging.DEBUG)
 RECORD_SCORE = 2960
+MAX_ITERS = 1500000
 
 def training(weightFile, maxIters):
     LOGGER.setLevel(logging.INFO)
-    agent = DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], maxIters=maxIters, eta=0.00001, epsilon=0.05, discount=0.95)
+    agent = DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], maxIters=maxIters, eta=0.00001, epsilon=0.4, discount=0.95)
     while True:
         # agent.readingWeights('weights_files/weights_1511.txt')
         agent.learn()
@@ -40,7 +41,7 @@ def training(weightFile, maxIters):
     # with open('weights_files/weights_%s.p' % timestamp, 'wb') as fp:
     #     pickle.dump(agent.weights, fp)
 
-    agent.save("./save/phoenix-dqn_%s.h5" % maxIters)
+    agent.save("save_replay/phoenix-dqn-replay_%s.h5" % maxIters)
     # return the agent object
     return agent
 
@@ -114,15 +115,14 @@ if __name__ == '__main__':
         #default
         weightFile="weights_files/weights.txt"
 
-    for i in range(20, 21):
-        if learning:
-            print "#############\nlearning...with maxiter: %s\n#############" % (i*100000)
-            trained_agent = training(weightFile, i*100000)
-        else:
-            trained_agent=DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0)
-            trained_agent.load("save/phoenix-dqn_1350000.h5")
+    if learning:
+        print "#############\nlearning...with maxiter: %s\n#############" % (MAX_ITERS)
+        trained_agent = training(weightFile, MAX_ITERS)
+    else:
+        trained_agent=DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0)
+        trained_agent.load("save_replay/phoenix-dqn-replay_140000.h5")
 
-        play(environment=env, agent=trained_agent, quiet=False)
+    play(environment=env, agent=trained_agent, quiet=False)
 
 
 
