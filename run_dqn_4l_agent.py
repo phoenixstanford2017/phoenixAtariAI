@@ -28,7 +28,10 @@ RECORD_SCORE = 2960
 
 def training(weightFile, maxIters):
     LOGGER.setLevel(logging.INFO)
-    agent = DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], maxIters=maxIters, eta=0.00001, epsilon=0.4, discount=0.99)
+    agent = DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], maxIters=maxIters, eta=0.00001, epsilon=0.05, discount=0.95)
+    # TODO temporary remove after 1M
+    agent.numIters = 500000
+    agent.load("save/phoenix-dqn_500000.h5")
     while True:
         # agent.readingWeights('weights_files/weights_1511.txt')
         agent.learn()
@@ -43,6 +46,11 @@ def training(weightFile, maxIters):
     agent.save("./save/phoenix-dqn_%s.h5" % maxIters)
     # return the agent object
     return agent
+
+
+def save_scores_to_csv(csv_file_path, game_num, score, num_timesteps):
+    with open(csv_file_path, 'a') as csv_file:
+        csv_file.write("%s, %s, %s\n" % (game_num, score, num_timesteps))
 
 
 def play(environment, agent, quiet=False):
@@ -64,19 +72,21 @@ def play(environment, agent, quiet=False):
             if reward:
                 tot_reward += reward
             if done:
-                print("Episode finished after {} timesteps".format(t + 1))
+                print("Episode {1} finished after {0} timesteps".format((t + 1), i_episode))
                 print("Final Score: %s" % tot_reward)
                 tot_rewards.append(tot_reward)
                 break
             # Reset the state
             obs = obs2
         else:
-            print("Episode finished after {} timesteps".format(5000))
+            print("Episode {1} finished after {0} timesteps".format((5000), i_episode))
             print("Final Score: %s" % tot_reward)
             tot_rewards.append(tot_reward)
 
             # if tot_reward > RECORD_SCORE:
             #     agent.writingWeights('weights_files/weights_%s_it%s.txt' % (int(tot_reward), agent.maxIters))
+        csv_file_path = 'scores/%s_dqn_scores.csv' % 900000
+        save_scores_to_csv(csv_file_path, i_episode, tot_reward, t)
 
     print "agent score average: %s" % (
     sum(tot_rewards) / float(len(tot_rewards)))
@@ -107,13 +117,13 @@ if __name__ == '__main__':
         #default
         weightFile="weights_files/weights.txt"
 
-    for i in range(1, 2):
+    for i in range(20, 21):
         if learning:
             print "#############\nlearning...with maxiter: %s\n#############" % (i*100000)
             trained_agent = training(weightFile, i*100000)
         else:
             trained_agent=DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0)
-            trained_agent.load("save/phoenix-dqn_900000.h5")
+            trained_agent.load("save/phoenix-dqn_1350000.h5")
 
         play(environment=env, agent=trained_agent, quiet=False)
 

@@ -80,7 +80,7 @@ def play(environment, agent, quiet=False):
 
         if tot_reward > RECORD_SCORE:
             agent.writingWeights('weights_files/weights_%s_it%s.txt' % (int(tot_reward), agent.maxIters))
-        csv_file_path = 'scores/%s_scores.csv'
+        csv_file_path = 'scores/%s_scores.csv' % 10000
         save_scores_to_csv(csv_file_path, i_episode, tot_reward, t)
 
     print "agent score average: %s" % (

@@ -142,7 +142,7 @@ class DQNAgent:
             # Stop if agent is stuck
             if self.inactivity_counter > 500:
                 # The agent is stuck
-                LOGGER.warning('The agent got stuck!')
+                LOGGER.warning('The agent got stuck! reward: %s' % reward)
                 done = True
 
 
@@ -155,6 +155,8 @@ class DQNAgent:
                 )
                 LOGGER.info('epsilon: "%s", eta: "%s"', self.eps, self.eta)
                 LOGGER.info('debugging info: %s', debug_info)
+                LOGGER.info('saving the weights after %s iters' % self.numIters)
+                self.save("./save/phoenix-dqn_%s.h5" % self.numIters)
 
 
             self.fit_neural_network(state, action, reward, new_state, done)
