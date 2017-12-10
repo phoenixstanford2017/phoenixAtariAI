@@ -49,6 +49,8 @@ class DQNAgent:
         self.tot_score = 0
         self.model = self.create_model()
         self.memory = deque(maxlen=100000)
+        self.skip_counter = 0
+        self.n_frame_skip = 4
 
     def create_model(self):
         """Method that creates
@@ -93,7 +95,6 @@ class DQNAgent:
                 # return -3000.0/self.tot_score
 
             if reward:
-                self.tot_score += reward
                 reward *= 10
                 self.inactivity_counter = 0
             elif not reward:
@@ -136,19 +137,36 @@ class DQNAgent:
         state = numpy.reshape(state, [1, self.state_size])
         for t in range(10000):
             self.numIters += 1
-            action = self.get_action(state)
+
+            # Frame skipping
+            if not self.skip_counter:
+                action = self.get_action(state)
+
             new_state, reward, done, debug_info = self.env.step(action)
-            # Get reward
-            reward = self.get_reward(reward, done, inactivity=True)
 
+            # Update tot score
+            self.tot_score += reward
 
-            # Stop if agent is stuck
-            if self.inactivity_counter > 500:
-                # The agent is stuck
-                LOGGER.warning('The agent got stuck! reward: %s' % reward)
-                done = True
-
+            # Reshape new state
             new_state = numpy.reshape(new_state, [1, self.state_size])
+
+
+            # Frame skipping
+            if not self.skip_counter:
+                # Get reward
+                reward = self.get_reward(reward, done, inactivity=True)
+
+
+                # Stop if agent is stuck
+                if self.inactivity_counter > 500:
+                    # The agent is stuck
+                    LOGGER.warning('The agent got stuck! reward: %s' % reward)
+                    done = True
+
+                self.remember(state, action, reward, new_state, done)
+                if len(self.memory) > 30:
+                    self.replay(30)
+
             if self.numIters % 10000 == 0:
                 LOGGER.info(
                     'GameNumber:"%s" Iter "%s"',
@@ -160,15 +178,20 @@ class DQNAgent:
                 LOGGER.info('saving the weights after %s iters' % self.numIters)
                 self.save("./save_replay/phoenix-dqn-replay_%s.h5" % self.numIters)
 
-            self.remember(state, action, reward, new_state, done)
-            if len(self.memory) > 10:
-                self.replay(10)
+
+
+            if self.skip_counter == self.n_frame_skip:
+                self.skip_counter = 0
+            else:
+                self.skip_counter += 1
+
             if done:
                 LOGGER.info('################# Game: %s finished score: %s', self.gameNumber, self.tot_score)
                 # Reset counters
                 self.gameNumber += 1
                 self.inactivity_counter = 0
                 self.tot_score = 0
+                self.skip_counter = 0
                 break
 
             # Initialize new state
