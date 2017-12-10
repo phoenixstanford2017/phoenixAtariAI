@@ -3,15 +3,13 @@ import gym
 import logging
 import datetime
 import numpy
-from dqn_agent import DQNAgent
+from dqn_agent_3_layers import DQNAgent
 import sys, getopt
 
 # Set up logging
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.DEBUG)
 # Set level and format for cli and core console logging.
-# create logger with 'spam_application'
-LOGGER.setLevel(logging.DEBUG)
 # create console handler with a higher log level
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
@@ -29,20 +27,20 @@ LOGGER.setLevel(logging.DEBUG)
 RECORD_SCORE = 2960
 
 def training(weightFile, maxIters):
-    agent = DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], maxIters=maxIters)
+    LOGGER.setLevel(logging.INFO)
+    agent = DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], maxIters=maxIters, eta=0.00001, epsilon=0.4, discount=0.99)
     while True:
         # agent.readingWeights('weights_files/weights_1511.txt')
         agent.learn()
         if agent.numIters > agent.maxIters:
             break
-
     # Save the weight vector
     # agent.writingWeights(weightFile)
     # timestamp = datetime.datetime.now().isoformat()
     # with open('weights_files/weights_%s.p' % timestamp, 'wb') as fp:
     #     pickle.dump(agent.weights, fp)
 
-    agent.save("./save/phoenix-dqn.h5")
+    agent.save("./save/phoenix-dqn_%s.h5" % maxIters)
     # return the agent object
     return agent
 
@@ -50,10 +48,10 @@ def training(weightFile, maxIters):
 def play(environment, agent, quiet=False):
     # Set agent epsilon to 0
     agent.eps = 0
+    LOGGER.setLevel(logging.INFO)
 
-    LOGGER.setLevel(logging.DEBUG)
     tot_rewards = []
-    for i_episode in range(10):
+    for i_episode in range(100):
         obs = env.reset()
         obs = numpy.reshape(obs, [1, agent.state_size])
         tot_reward = 0
@@ -109,17 +107,15 @@ if __name__ == '__main__':
         #default
         weightFile="weights_files/weights.txt"
 
-    for i in range(100, 101):
+    for i in range(1, 2):
         if learning:
-            print "#############\nlearning...with maxiter: %s\n#############" % (i*10000)
-            trained_agent = training(weightFile, i*10000)
+            print "#############\nlearning...with maxiter: %s\n#############" % (i*100000)
+            trained_agent = training(weightFile, i*100000)
         else:
             trained_agent=DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0)
-            # weightFile = "weights_files/weights_4530_it10000.txt"
-            # trained_agent.readingWeights(weightFile)
+            trained_agent.load("save/phoenix-dqn_300000.h5")
 
-
-        play(environment=env, agent=trained_agent, quiet=False)
+        play(environment=env, agent=trained_agent, quiet=True)
 
 
 
