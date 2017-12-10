@@ -20,7 +20,7 @@ class DQNAgent:
             environment,
             action_space,
             NN_arch,
-            weights_dir,
+            weights_dir='dqn_weights',
             eta=0.001,
             epsilon=1,
             discount=0.99,
@@ -81,7 +81,7 @@ class DQNAgent:
              self.eps_decaying_factor)
         )
         LOGGER.info(
-            'The agent weights will be saved in "%s", wiht format "%s"'
+            'The agent weights will be saved in "%s", with format "%s"'
             % (weights_dir, weights_file_name)
         )
         return '/'.join([weights_dir, weights_file_name])
@@ -257,17 +257,6 @@ class DQNAgent:
             else:
                 self.fit_neural_network(state, action, reward, new_state, done)
 
-            if self.numIters % 10000 == 0:
-                LOGGER.info(
-                    'GameNumber:"%s" Iter "%s"',
-                    self.gameNumber,
-                    self.numIters,
-                )
-                LOGGER.info('epsilon: "%s", eta: "%s"', self.eps, self.eta)
-                LOGGER.info('debugging info: %s', debug_info)
-                LOGGER.info('saving the weights after %s iters' % self.numIters)
-                self.save(self.save_path % self.numIters)
-
             # Frame skipping
             if not done:
                 for i in range(frame_skipping):
@@ -278,6 +267,17 @@ class DQNAgent:
                     new_state = numpy.reshape(new_state, [1, self.state_size])
                     if done:
                         break
+
+            if self.numIters % 10000 == 0:
+                LOGGER.info(
+                    'GameNumber:"%s" Iter "%s"',
+                    self.gameNumber,
+                    self.numIters,
+                )
+                LOGGER.info('epsilon: "%s", eta: "%s"', self.eps, self.eta)
+                LOGGER.info('debugging info: %s', debug_info)
+                LOGGER.info('saving the weights after %s iters' % self.numIters)
+                self.save(self.save_path % self.numIters)
 
             if done:
                 LOGGER.info('################# Game: %s finished score: %s', self.gameNumber, tot_score)

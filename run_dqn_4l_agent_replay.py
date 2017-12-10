@@ -120,7 +120,7 @@ if __name__ == '__main__':
         trained_agent = training(weightFile, MAX_ITERS)
     else:
         trained_agent=DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0)
-        trained_agent.load("save_replay/phoenix-dqn-replay_700000.h5")
+        trained_agent.load("save_replay/phoenix-dqn-replay_900000.h5")
 
     play(environment=env, agent=trained_agent, quiet=False)
 
