@@ -68,7 +68,7 @@ def parse_args():
         type=str,
         required=False,
         help=(
-            'The path of the weights file to load. When in playin mode.'
+            'The path of the weights file to load. When run in playing mode.'
         )
     )
     pars.add_argument(
