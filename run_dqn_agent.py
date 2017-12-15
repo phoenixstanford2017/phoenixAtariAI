@@ -5,7 +5,7 @@ import os
 import gym
 import numpy
 
-from dqn import DQNAgent
+from dqn_agent import DQNAgent
 
 # Set up logging
 LOGGER = logging.getLogger()
@@ -39,7 +39,7 @@ def parse_args():
         action='store_true',
         default=False,
         help=(
-            'Switch to learning model. The agent will learn from the game '
+            'Switch to learning mode. The agent will learn from the game '
             'instead of simply playing.'
         )
     )
@@ -96,9 +96,10 @@ def parse_args():
         '--weights_dir',
         '-wdir',
         type=str,
+        dest='weights_dir',
         default='dqn_weights',
         help=(
-            'Use frame skipping. Specify how many steps you want to skip.'
+            'The weights directory.'
         )
     )
     pars.add_argument(
@@ -107,7 +108,17 @@ def parse_args():
         type=str,
         required=False,
         help=(
-            'The path of the file to load.'
+            'The path of the weights file to load. When in playin mode.'
+        )
+    )
+    pars.add_argument(
+        '--no-quiet',
+        '-nq',
+        dest='quiet',
+        action='store_false',
+        default=True,
+        help=(
+            'Run in not quiet mode, enable game graphic.'
         )
     )
     pars.add_argument(
@@ -178,31 +189,28 @@ def play(environment, agent, quiet=False):
 
     tot_rewards = []
     for i_episode in range(100):
-        obs = env.reset()
+        obs = environment.reset()
         obs = numpy.reshape(obs, [1, agent.state_size])
         tot_reward = 0
         for t in range(5000):
             if not quiet:
-                env.render()
+                environment.render()
             action = agent.get_action(obs)
-            obs2, reward, done, info = env.step(action)
+            obs2, reward, done, info = environment.step(action)
             obs2 = numpy.reshape(obs2, [1, agent.state_size])
             if reward:
                 tot_reward += reward
             if done:
-                print("Episode {1} finished after {0} timesteps".format((t + 1), i_episode))
+                print("Episode {1} finished after {0} timesteps".format((t + 1), i_episode+1))
                 print("Final Score: %s" % tot_reward)
                 tot_rewards.append(tot_reward)
                 break
             # Reset the state
             obs = obs2
         else:
-            print("Episode {1} finished after {0} timesteps".format((5000), i_episode))
+            print("Episode {1} finished after {0} timesteps".format((5000), i_episode+1))
             print("Final Score: %s" % tot_reward)
             tot_rewards.append(tot_reward)
-
-        # csv_file_path = 'scores/%s_dqn_scores.csv' % 900000
-        # save_scores_to_csv(csv_file_path, i_episode, tot_reward, t)
 
     print "agent score average: %s" % (
     sum(tot_rewards) / float(len(tot_rewards)))
@@ -224,10 +232,13 @@ if __name__ == '__main__':
         if args.load:
             trained_agent.load(args.load)
         else:
-            LOGGER.warning(
-                'No weights specified the agent will play without being trained'
+            LOGGER.error(
+                'No weights file specified! Please specify a weight file when '
+                'running in playing mode. '
+                'E.g: --load weights_dir/weights_file.txt'
             )
-    play(environment=env, agent=trained_agent, quiet=True)
+            exit(1)
+    play(environment=env, agent=trained_agent, quiet=args.quiet)
 
 
 
