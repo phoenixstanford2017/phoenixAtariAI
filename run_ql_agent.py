@@ -2,14 +2,15 @@ import cPickle as pickle
 import gym
 import logging
 import datetime
-import numpy
-from dqn_agent_3_layers import DQNAgent
+from ql_agent import QAgentFuncApprox
 import sys, getopt
 
 # Set up logging
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.DEBUG)
 # Set level and format for cli and core console logging.
+# create logger with 'spam_application'
+LOGGER.setLevel(logging.DEBUG)
 # create console handler with a higher log level
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
@@ -23,44 +24,46 @@ LOGGER.addHandler(ch)
 # Invoke environment
 env = gym.make('Phoenix-ram-v0')
 
-LOGGER.setLevel(logging.DEBUG)
+LOGGER.setLevel(logging.INFO)
 RECORD_SCORE = 2960
 
 def training(weightFile, maxIters):
-    LOGGER.setLevel(logging.INFO)
-    agent = DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], maxIters=maxIters, eta=0.00001, epsilon=0.4, discount=0.99)
+    agent = QAgentFuncApprox(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0.4, eta=0.001, discount=0.95, maxIters=maxIters)
     while True:
         # agent.readingWeights('weights_files/weights_1511.txt')
         agent.learn()
         if agent.numIters > agent.maxIters:
             break
+
     # Save the weight vector
-    # agent.writingWeights(weightFile)
+    agent.writingWeights(weightFile)
     # timestamp = datetime.datetime.now().isoformat()
     # with open('weights_files/weights_%s.p' % timestamp, 'wb') as fp:
     #     pickle.dump(agent.weights, fp)
 
-    agent.save("./save/phoenix-dqn_%s.h5" % maxIters)
     # return the agent object
     return agent
+
+
+def save_scores_to_csv(csv_file_path, game_num, score, num_timesteps):
+    with open(csv_file_path, 'a') as csv_file:
+        csv_file.write("%s, %s, %s\n" % (game_num, score, num_timesteps))
 
 
 def play(environment, agent, quiet=False):
     # Set agent epsilon to 0
     agent.eps = 0
-    LOGGER.setLevel(logging.INFO)
 
+    LOGGER.setLevel(logging.INFO)
     tot_rewards = []
     for i_episode in range(100):
         obs = env.reset()
-        obs = numpy.reshape(obs, [1, agent.state_size])
         tot_reward = 0
         for t in range(5000):
             if not quiet:
                 env.render()
             action = agent.get_action(obs)
             obs2, reward, done, info = env.step(action)
-            obs2 = numpy.reshape(obs2, [1, agent.state_size])
             if reward:
                 tot_reward += reward
             if done:
@@ -75,8 +78,10 @@ def play(environment, agent, quiet=False):
             print("Final Score: %s" % tot_reward)
             tot_rewards.append(tot_reward)
 
-            # if tot_reward > RECORD_SCORE:
-            #     agent.writingWeights('weights_files/weights_%s_it%s.txt' % (int(tot_reward), agent.maxIters))
+        # if tot_reward > RECORD_SCORE:
+        #     agent.writingWeights('weights_files/weights_%s_it%s.txt' % (int(tot_reward), agent.maxIters))
+        # csv_file_path = 'scores/%s_scores.csv' % 10000
+        # save_scores_to_csv(csv_file_path, i_episode, tot_reward, t)
 
     print "agent score average: %s" % (
     sum(tot_rewards) / float(len(tot_rewards)))
@@ -107,15 +112,18 @@ if __name__ == '__main__':
         #default
         weightFile="weights_files/weights.txt"
 
-    for i in range(1, 2):
-        if learning:
-            print "#############\nlearning...with maxiter: %s\n#############" % (i*100000)
-            trained_agent = training(weightFile, i*100000)
-        else:
-            trained_agent=DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0)
-            trained_agent.load("save/phoenix-dqn_300000.h5")
+    print 'weight file is ', weightFile
 
-        play(environment=env, agent=trained_agent, quiet=True)
+    if learning:
+        print "#############\nlearning...with maxiter: %s\n#############" % (i*10000)
+        trained_agent = training(weightFile, i*10000)
+    else:
+        trained_agent=QAgentFuncApprox(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0)
+        weightFile = "weights_files/weights_2960.txt"
+        trained_agent.readingWeights(weightFile)
+
+
+    play(environment=env, agent=trained_agent, quiet=True)
 
 
 
