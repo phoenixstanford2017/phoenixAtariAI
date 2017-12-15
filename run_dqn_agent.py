@@ -138,7 +138,8 @@ def training(**kwargs):
         eta=0.00001,
         epsilon=0.4,
         discount=0.95,
-        weights_dir=kwargs['weights_dir']
+        weights_dir=kwargs['weights_dir'],
+        mem_size=10**5
     )
 
     while True:
@@ -205,8 +206,6 @@ def play(environment, agent, quiet=False):
 
     print "agent score average: %s" % (
     sum(tot_rewards) / float(len(tot_rewards)))
-
-
 
 
 if __name__ == '__main__':

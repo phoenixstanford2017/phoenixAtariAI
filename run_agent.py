@@ -56,7 +56,7 @@ def play(environment, agent, quiet=False):
 
     LOGGER.setLevel(logging.INFO)
     tot_rewards = []
-    for i_episode in range(10):
+    for i_episode in range(100):
         obs = env.reset()
         tot_reward = 0
         for t in range(5000):
@@ -78,10 +78,10 @@ def play(environment, agent, quiet=False):
             print("Final Score: %s" % tot_reward)
             tot_rewards.append(tot_reward)
 
-        if tot_reward > RECORD_SCORE:
-            agent.writingWeights('weights_files/weights_%s_it%s.txt' % (int(tot_reward), agent.maxIters))
-        csv_file_path = 'scores/%s_scores.csv' % 10000
-        save_scores_to_csv(csv_file_path, i_episode, tot_reward, t)
+        # if tot_reward > RECORD_SCORE:
+        #     agent.writingWeights('weights_files/weights_%s_it%s.txt' % (int(tot_reward), agent.maxIters))
+        # csv_file_path = 'scores/%s_scores.csv' % 10000
+        # save_scores_to_csv(csv_file_path, i_episode, tot_reward, t)
 
     print "agent score average: %s" % (
     sum(tot_rewards) / float(len(tot_rewards)))
@@ -113,17 +113,17 @@ if __name__ == '__main__':
         weightFile="weights_files/weights.txt"
 
     print 'weight file is ', weightFile
-    for i in range(10, 16):
-        if learning:
-            print "#############\nlearning...with maxiter: %s\n#############" % (i*10000)
-            trained_agent = training(weightFile, i*10000)
-        else:
-            trained_agent=QAgentFuncApprox(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0)
-            weightFile = "weights_files/weights_4530_it10000.txt"
-            trained_agent.readingWeights(weightFile)
+
+    if learning:
+        print "#############\nlearning...with maxiter: %s\n#############" % (i*10000)
+        trained_agent = training(weightFile, i*10000)
+    else:
+        trained_agent=QAgentFuncApprox(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0)
+        weightFile = "weights_files/weights_2960.txt"
+        trained_agent.readingWeights(weightFile)
 
 
-        play(environment=env, agent=trained_agent, quiet=True)
+    play(environment=env, agent=trained_agent, quiet=True)
 
 
 
