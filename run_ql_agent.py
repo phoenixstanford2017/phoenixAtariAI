@@ -1,16 +1,15 @@
 import argparse
-import logging
 import os
-
 import gym
-import numpy
-
-from dqn_agent import DQNAgent
+import logging
+from ql_agent import QAgentFuncApprox
 
 # Set up logging
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.DEBUG)
 # Set level and format for cli and core console logging.
+# create logger with 'spam_application'
+LOGGER.setLevel(logging.DEBUG)
 # create console handler with a higher log level
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
@@ -24,7 +23,7 @@ LOGGER.addHandler(ch)
 # Invoke environment
 env = gym.make('Phoenix-ram-v0')
 
-LOGGER.setLevel(logging.DEBUG)
+LOGGER.setLevel(logging.INFO)
 
 
 def parse_args():
@@ -44,52 +43,13 @@ def parse_args():
         )
     )
     pars.add_argument(
-        '--architecture',
-        '-a',
-        dest='NN_arch',
-        type=str,
-        required=True,
-        choices=['3l', '4l'],
-        help=(
-            'The NN architecture for the DQN agent: 3 layers or 4layers.'
-        )
-    )
-    pars.add_argument(
         '--maxiters',
         '-m',
         dest='max_iters',
         type=int,
-        default=10**6,
+        default=10**5,
         help=(
             'The number of maximum iterations.'
-        )
-    )
-    pars.add_argument(
-        '--replay',
-        '-r',
-        action='store_true',
-        default=False,
-        help=(
-            'Switch to use replay memory technique.'
-        )
-    )
-    pars.add_argument(
-        '--batch_size',
-        '-bs',
-        type=int,
-        default=30,
-        help=(
-            'The size of the minibatch sampled from the agent memory '
-            'if using replay memory technique.'
-        )
-    )
-    pars.add_argument(
-        '--frame_skipping',
-        '-fs',
-        type=int,
-        default=0,
-        help=(
-            'Use frame skipping. Specify how many steps you want to skip.'
         )
     )
     pars.add_argument(
@@ -97,7 +57,7 @@ def parse_args():
         '-wdir',
         type=str,
         dest='weights_dir',
-        default='dqn_weights',
+        default='weights_dir',
         help=(
             'The weights directory.'
         )
@@ -141,35 +101,23 @@ def training(**kwargs):
     else:
         LOGGER.setLevel(logging.INFO)
 
-    agent = DQNAgent(
+
+    agent = QAgentFuncApprox(
         environment=env,
         action_space=[0, 1, 2, 3, 4, 5, 6, 7],
-        NN_arch=kwargs['NN_arch'],
-        maxIters=kwargs['max_iters'],
-        eta=0.00001,
         epsilon=0.4,
+        eta=0.001,
         discount=0.95,
-        weights_dir=kwargs['weights_dir'],
-        mem_size=10**5
+        maxIters=kwargs['max_iters']
     )
-
     while True:
-        agent.learn(
-            replay=kwargs['replay'],
-            frame_skipping=kwargs['frame_skipping'],
-            batch_size=kwargs['batch_size']
-        )
+        agent.learn()
         if agent.numIters > agent.maxIters:
             break
 
-    agent.save(agent.save_path % kwargs['max_iters'])
-    # return the agent object
+    agent.writingWeights('%s/weights_it%s.txt' % (kwargs['weights_dir'], kwargs['max_iters']))
+
     return agent
-
-
-def save_scores_to_csv(csv_file_path, game_num, score, num_timesteps):
-    with open(csv_file_path, 'a') as csv_file:
-        csv_file.write("%s, %s, %s\n" % (game_num, score, num_timesteps))
 
 
 def set_up_weights_dir(dir_path):
@@ -182,22 +130,25 @@ def set_up_weights_dir(dir_path):
         os.makedirs(dir_path)
 
 
+def save_scores_to_csv(csv_file_path, game_num, score, num_timesteps):
+    with open(csv_file_path, 'a') as csv_file:
+        csv_file.write("%s, %s, %s\n" % (game_num, score, num_timesteps))
+
+
 def play(environment, agent, quiet=False):
     # Set agent epsilon to 0
     agent.eps = 0
-    LOGGER.setLevel(logging.INFO)
 
+    LOGGER.setLevel(logging.INFO)
     tot_rewards = []
     for i_episode in range(100):
         obs = environment.reset()
-        obs = numpy.reshape(obs, [1, agent.state_size])
         tot_reward = 0
         for t in range(5000):
             if not quiet:
                 environment.render()
             action = agent.get_action(obs)
             obs2, reward, done, info = environment.step(action)
-            obs2 = numpy.reshape(obs2, [1, agent.state_size])
             if reward:
                 tot_reward += reward
             if done:
@@ -213,7 +164,8 @@ def play(environment, agent, quiet=False):
             tot_rewards.append(tot_reward)
 
     print "agent score average: %s" % (
-    sum(tot_rewards) / float(len(tot_rewards)))
+        sum(tot_rewards) / float(len(tot_rewards))
+    )
 
 
 if __name__ == '__main__':
@@ -225,20 +177,24 @@ if __name__ == '__main__':
 
     # Train and play or just play
     if args.learning:
+        LOGGER.info(
+            'Running Q-Learning agent with function approx in learning mode.'
+        )
         print "#############\nlearning...with following args: %s\n#############" % vars(args)
         trained_agent = training(**vars(args))
     else:
-        trained_agent=DQNAgent(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0, NN_arch=args.NN_arch)
+        LOGGER.info(
+            'Running Q-Learning agent with function approx in playing mode.'
+        )
+        trained_agent = QAgentFuncApprox(environment=env, action_space=[0, 1, 2, 3, 4, 5, 6, 7], epsilon=0)
         if args.load:
-            trained_agent.load(args.load)
+            trained_agent.readingWeights(args.load)
         else:
             LOGGER.error(
                 'No weights file specified! Please specify a weight file when '
                 'running in playing mode. '
-                'E.g: --load weights_dir/weights_file.txt'
+                'E.g: --load dqn_weights/weights_file.h5'
             )
             exit(1)
+
     play(environment=env, agent=trained_agent, quiet=args.quiet)
-
-
-
